@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: image-flow
+spec:
+  selector:
+    matchLabels:
+      app: image-flow
+  template:
+    metadata:
+      labels:
+        app: image-flow
+    spec:
+      containers:
+      - name: image-flow
+        image: image-flow
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        volumeMounts:
+        - mountPath: /var/run/docker.sock
+          name: docker-socket-volume
+        securityContext:
+          privileged: true
+      volumes:
+      - name: docker-socket-volume
+        hostPath:
+          path: /var/run/docker.sock
+          type: File
