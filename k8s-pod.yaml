@@ -18,6 +18,9 @@ spec:
           limits:
             memory: "128Mi"
             cpu: "500m"
+        env:
+        - name: app
+          value: docker-py
         volumeMounts:
         - mountPath: /var/run/docker.sock
           name: docker-socket-volume

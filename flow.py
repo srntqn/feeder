@@ -1,29 +1,37 @@
 from kubernetes import client, config
 import docker
 import time
+import os
 
-config.load_incluster_config()
-v1 = client.CoreV1Api()
+config.load_incluster_config()  # for execution inside k8s cluster
+# config.load_kube_config()  # for local execution
+app = os.environ['app']
+core = client.CoreV1Api()
+apps = client.AppsV1Api()
 docker_client = docker.from_env()
 
 
-def getContainerImage():
-    pods = v1.list_namespaced_pod(watch=False, namespace='default')
-    images = []
+def getPod(pod):
+    pods = core.list_namespaced_pod(watch=False, namespace='default',
+                                    label_selector=f'app={pod}')
     for p in pods.items:
-        for c in p.spec.containers:
-            images.append(c.image)
-    return images
+        return p
+
+
+def getContainerImage(pod):
+    p = getPod(pod)
+    for c in p.spec.containers:
+        return c.image
 
 
 def checkImageUpdate():
-    for i in getContainerImage():
-        local_image_id = docker_client.images.get(i).id
-        pulled_image_id = docker_client.images.pull(i, tag='latest').id
-        if local_image_id == pulled_image_id:
-            print(f'No changes for {i}')
-        else:
-            print(f'Image {i} changed')
+    i = getContainerImage(app)
+    local_image_id = docker_client.images.get(i).id
+    pulled_image_id = docker_client.images.pull(i, tag='latest').id
+    if local_image_id == pulled_image_id:
+        print(f'No changes for {i}')
+    else:
+        print(f'Image {i} changed')
 
 
 def run():
