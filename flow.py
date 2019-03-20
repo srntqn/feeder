@@ -1,4 +1,5 @@
 from kubernetes import client, config
+from kubernetes.client.rest import ApiException
 import docker
 import time
 import os
@@ -14,8 +15,11 @@ docker_client = docker.from_env()
 
 
 def getPod(label):
-    pods = core.list_namespaced_pod(watch=False, namespace=ns,
-                                    label_selector=f'app={label}')
+    try:
+        pods = core.list_namespaced_pod(watch=False, namespace=ns,
+                                        label_selector=f'app={label}')
+    except ApiException as e:
+        print(f"Exception when calling CoreV1Api->list_namespaced_pod: {e}")
     for p in pods.items:
         return p
 
@@ -27,6 +31,15 @@ def getContainerImage():
         return c.image
 
 
+def deletePod():
+    p = getPod(app)
+    try:
+        core.delete_namespaced_pod(p.metadata.name, ns,
+                                   body=client.V1DeleteOptions())
+    except ApiException as e:
+        print(f"Exception when calling CoreV1Api->delete_namespaced_pod: {e}")
+
+
 def checkImageUpdate():
     i = getContainerImage()
     local_image_id = docker_client.images.get(i).id
@@ -36,12 +49,6 @@ def checkImageUpdate():
     else:
         deletePod()
         print(f'{i} have changes. New pod is created.')
-
-
-def deletePod():
-    p = getPod(app)
-    return core.delete_namespaced_pod(p.metadata.name, ns,
-                                      body=client.V1DeleteOptions())
 
 
 def run():
