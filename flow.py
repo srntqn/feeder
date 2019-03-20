@@ -6,32 +6,42 @@ import os
 config.load_incluster_config()  # for execution inside k8s cluster
 # config.load_kube_config()  # for local execution
 app = os.environ['app']
+ns = 'default'
+
 core = client.CoreV1Api()
 apps = client.AppsV1Api()
 docker_client = docker.from_env()
 
 
-def getPod(pod):
-    pods = core.list_namespaced_pod(watch=False, namespace='default',
-                                    label_selector=f'app={pod}')
+def getPod(label):
+    pods = core.list_namespaced_pod(watch=False, namespace=ns,
+                                    label_selector=f'app={label}')
     for p in pods.items:
         return p
 
 
-def getContainerImage(pod):
-    p = getPod(pod)
+def getContainerImage():
+    p = getPod(app)
+    # TO-DO create filter for sidecar exclude
     for c in p.spec.containers:
         return c.image
 
 
 def checkImageUpdate():
-    i = getContainerImage(app)
+    i = getContainerImage()
     local_image_id = docker_client.images.get(i).id
     pulled_image_id = docker_client.images.pull(i, tag='latest').id
     if local_image_id == pulled_image_id:
         print(f'No changes for {i}')
     else:
-        print(f'Image {i} changed')
+        deletePod()
+        print(f'{i} have changes. New pod is created.')
+
+
+def deletePod():
+    p = getPod(app)
+    return core.delete_namespaced_pod(p.metadata.name, ns,
+                                      body=client.V1DeleteOptions())
 
 
 def run():
