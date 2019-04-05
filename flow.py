@@ -31,6 +31,12 @@ def getContainerImage():
         return c.image
 
 
+def getCurrentImageId():
+    p = getPod(app)
+    for i in p.status.container_statuses:
+        print(i.image_id)
+
+
 def deletePod():
     p = getPod(app)
     try:
