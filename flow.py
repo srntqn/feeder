@@ -1,17 +1,39 @@
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
-import docker
 import time
 import os
+import requests
+import json
 
-config.load_incluster_config()  # for execution inside k8s cluster
-# config.load_kube_config()  # for local execution
+
+# config.load_incluster_config()  # for execution inside k8s cluster
+config.load_kube_config()  # for local execution
 app = os.environ['app']
 ns = 'default'
 
 core = client.CoreV1Api()
 apps = client.AppsV1Api()
-docker_client = docker.from_env()
+
+
+def getToken():
+    image_name = getContainerImageName()
+    auth = (f'https://auth.docker.io/token?scope=repository:{image_name}:' +
+            'pull&service=registry.docker.io')
+    return requests.get(url=auth).json()['token']
+
+
+def getRegistryImageId():
+    image_name = getContainerImageName()
+    token = getToken()
+    headers = {
+        'Accept': 'application/vnd.docker.distribution.manifest.v2+json',
+        'Authorization': f'Bearer {token}'
+    }
+    manifest = ('https://registry-1.docker.io/v2/' +
+                f'{image_name}/manifests/latest')
+    r = requests.get(url=manifest,
+                     headers=headers)
+    return r.json()['config']['digest']
 
 
 def getPod(label):
@@ -24,17 +46,18 @@ def getPod(label):
         return p
 
 
-def getContainerImage():
+def getContainerImageName():
     p = getPod(app)
-    # TO-DO create filter for sidecar exclude
     for c in p.spec.containers:
-        return c.image
+        if c.name == app:
+            return c.image
 
 
 def getCurrentImageId():
     p = getPod(app)
-    for i in p.status.container_statuses:
-        print(i.image_id)
+    for c in p.status.container_statuses:
+        if c.name == app:
+            return c.image_id.split('@')[1]
 
 
 def deletePod():
@@ -47,10 +70,10 @@ def deletePod():
 
 
 def checkImageUpdate():
-    i = getContainerImage()
-    local_image_id = docker_client.images.get(i).id
-    pulled_image_id = docker_client.images.pull(i, tag='latest').id
-    if local_image_id == pulled_image_id:
+    i = getContainerImageName()
+    current_image_id = getCurrentImageId()
+    pulled_image_id = getRegistryImageId()
+    if current_image_id == pulled_image_id:
         print(f'No changes for {i}')
     else:
         deletePod()
