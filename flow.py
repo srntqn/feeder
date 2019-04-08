@@ -6,8 +6,8 @@ import requests
 import json
 
 
-# config.load_incluster_config()  # for execution inside k8s cluster
-config.load_kube_config()  # for local execution
+config.load_incluster_config()  # for execution inside k8s cluster
+# config.load_kube_config()  # for local execution
 app = os.environ['app']
 ns = 'default'
 
@@ -33,7 +33,7 @@ def getRegistryImageId():
                 f'{image_name}/manifests/latest')
     r = requests.get(url=manifest,
                      headers=headers)
-    return r.json()['config']['digest']
+    return r.headers['Docker-Content-Digest']
 
 
 def getPod(label):
