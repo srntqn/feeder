@@ -1,25 +1,34 @@
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
+from requests.auth import HTTPBasicAuth
+from argparse import ArgumentParser
 import time
 import os
 import requests
 import json
 
 
+parser = ArgumentParser()
+parser.add_argument('--privateRegistry', action="store_true", default=False)
+
+
 config.load_incluster_config()  # for execution inside k8s cluster
 # config.load_kube_config()  # for local execution
 app = os.environ['app']
 ns = 'default'
-
 core = client.CoreV1Api()
 apps = client.AppsV1Api()
 
 
 def getToken():
     image_name = getContainerImageName()
-    auth = (f'https://auth.docker.io/token?scope=repository:{image_name}:' +
-            'pull&service=registry.docker.io')
-    return requests.get(url=auth).json()['token']
+    url = (f'https://auth.docker.io/token?scope=repository:{image_name}:' +
+           'pull&service=registry.docker.io')
+    if parser.parse_args().privateRegistry is True:
+        return requests.get(url, auth=HTTPBasicAuth(os.environ['docker_user'],
+                            os.environ['docker_password'])).json()['token']
+    else:
+        return requests.get(url).json()['token']
 
 
 def getRegistryImageId():

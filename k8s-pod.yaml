@@ -21,6 +21,16 @@ spec:
         env:
         - name: app
           value: docker-py
+        - name: docker_user
+          valueFrom:
+            secretKeyRef:
+              name: docker-secret
+              key: docker_user 
+        - name: docker_password
+          valueFrom:
+            secretKeyRef:
+              name: docker-secret
+              key: docker_password
         volumeMounts:
         - mountPath: /var/run/docker.sock
           name: docker-socket-volume
