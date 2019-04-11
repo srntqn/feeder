@@ -1,10 +1,10 @@
 from kubernetes import client, config
 from kubernetes.client.rest import ApiException
 from requests.auth import HTTPBasicAuth
+from requests import get
 from argparse import ArgumentParser
 import time
 import os
-import requests
 import json
 
 
@@ -25,10 +25,10 @@ def getToken():
     url = (f'https://auth.docker.io/token?scope=repository:{image_name}:' +
            'pull&service=registry.docker.io')
     if parser.parse_args().privateRegistry is True:
-        return requests.get(url, auth=HTTPBasicAuth(os.environ['docker_user'],
-                            os.environ['docker_password'])).json()['token']
+        return get(url, auth=HTTPBasicAuth(os.environ['docker_user'],
+                   os.environ['docker_password'])).json()['token']
     else:
-        return requests.get(url).json()['token']
+        return get(url).json()['token']
 
 
 def getRegistryImageId():
@@ -40,8 +40,7 @@ def getRegistryImageId():
     }
     manifest = ('https://registry-1.docker.io/v2/' +
                 f'{image_name}/manifests/latest')
-    r = requests.get(url=manifest,
-                     headers=headers)
+    r = get(url=manifest, headers=headers)
     return r.headers['Docker-Content-Digest']
 
 
