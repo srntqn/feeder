@@ -2,7 +2,7 @@ apiVersion: skaffold/v1beta4
 kind: Config
 build:
   artifacts:
-  - image: image-flow
+  - image: feeder
 deploy:
   kubectl:
     manifests:

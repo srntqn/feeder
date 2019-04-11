@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: image-flow
+  name: feeder
 spec:
   selector:
     matchLabels:
-      app: image-flow
+      app: feeder
   template:
     metadata:
       labels:
-        app: image-flow
+        app: feeder
     spec:
       containers:
-      - name: image-flow
-        image: image-flow
+      - name: feeder
+        image: feeder
         resources:
           limits:
             memory: "128Mi"
@@ -31,13 +31,5 @@ spec:
             secretKeyRef:
               name: docker-secret
               key: docker_password
-        volumeMounts:
-        - mountPath: /var/run/docker.sock
-          name: docker-socket-volume
         securityContext:
           privileged: true
-      volumes:
-      - name: docker-socket-volume
-        hostPath:
-          path: /var/run/docker.sock
-          type: File

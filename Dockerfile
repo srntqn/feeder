@@ -1,5 +1,5 @@
 FROM  python:3.7
-RUN pip install docker kubernetes
+RUN pip install kubernetes
 WORKDIR /app
 COPY *.py ./
-ENTRYPOINT ["python", "-u", "flow.py", "--privateRegistry"]
+ENTRYPOINT ["python", "-u", "feeder.py", "--privateRegistry"]
