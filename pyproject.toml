@@ -5,7 +5,7 @@ description = ""
 authors = ["srntqn <serenityqn@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 requests = "^2.23.0"
 kubernetes = "^10.0.1"
 
